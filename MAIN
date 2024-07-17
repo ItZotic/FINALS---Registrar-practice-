@@ -1,33 +1,43 @@
 #include<iostream>
 #include<fstream>
-#include<algorithm> 
+#include<algorithm> // For std::transform and std::tolower
 using namespace std;
 
 struct Person {
-    string name;
+    string surname;
+    string firstName;
+    string middleInitial;
     string password;
     string dateOfBirth;
     string address;
     string civilStatus;
-    string fatherName;
-    string motherMaidenName;
-    int income; 
-    Person* next;
+    string fatherSurname;
+    string fatherFirstName;
+    string fatherMiddleInitial;
+    string motherSurname;
+    string motherFirstName;
+    string motherMiddleInitial;
+    int income; // in PHP (Philippine Peso)
+    Person* next; // Pointer to next person in the linked list
+    int catalogNumber; // Catalog number for sorting by surname
 
-    Person(const string& n, const string& pw, const string& dob, const string& addr,
-           const string& cs, const string& fn, const string& mmn, int inc)
-        : name(n), password(pw), dateOfBirth(dob), address(addr), civilStatus(cs),
-          fatherName(fn), motherMaidenName(mmn), income(inc), next(nullptr) {}
+    Person(const string& sn, const string& fn, const string& mi, const string& pw, const string& dob,
+           const string& addr, const string& cs, const string& fsn, const string& ffn, const string& fmi,
+           const string& msn, const string& mfn, const string& mmi, int inc, int num)
+        : surname(sn), firstName(fn), middleInitial(mi), password(pw), dateOfBirth(dob),
+          address(addr), civilStatus(cs), fatherSurname(fsn), fatherFirstName(ffn), fatherMiddleInitial(fmi),
+          motherSurname(msn), motherFirstName(mfn), motherMiddleInitial(mmi), income(inc), next(nullptr),
+          catalogNumber(num) {}
 };
 
-// Function to insert a person into the linked list sorted by name (surname)
+// Function to insert a person into the linked list sorted by surname
 void insertSorted(Person*& head, Person* newPerson) {
-    if (head == nullptr || newPerson->name < head->name) {
+    if (head == nullptr || newPerson->surname < head->surname) {
         newPerson->next = head;
         head = newPerson;
     } else {
         Person* current = head;
-        while (current->next != nullptr && current->next->name < newPerson->name) {
+        while (current->next != nullptr && current->next->surname < newPerson->surname) {
             current = current->next;
         }
         newPerson->next = current->next;
@@ -35,18 +45,65 @@ void insertSorted(Person*& head, Person* newPerson) {
     }
 }
 
+// Function to display all persons in the linked list
 void displayList(const Person* head) {
     const Person* current = head;
     while (current != nullptr) {
-        cout << "Name: " << current->name << endl;
+        cout << "Catalog Number: " << current->catalogNumber << endl;
+        cout << "Name: " << current->surname << ", " << current->firstName << " " << current->middleInitial << "." << endl;
         cout << "Password: " << current->password << endl;
         cout << "Date of Birth: " << current->dateOfBirth << endl;
         cout << "Address: " << current->address << endl;
         cout << "Civil Status: " << current->civilStatus << endl;
-        cout << "Father's Name: " << current->fatherName << endl;
-        cout << "Mother's Maiden Name: " << current->motherMaidenName << endl;
+        cout << "Father's Name: " << current->fatherSurname << ", " << current->fatherFirstName << " " << current->fatherMiddleInitial << "." << endl;
+        cout << "Mother's Maiden Name: " << current->motherSurname << ", " << current->motherFirstName << " " << current->motherMiddleInitial << "." << endl;
         cout << "Monthly Income: PHP " << current->income << endl;
         cout << endl;
+        current = current->next;
+    }
+}
+
+// Function to format name into "Surname, First Name, Middle Initial"
+void formatName(const string& fullName, string& surname, string& firstName, string& middleInitial) {
+    size_t lastComma = fullName.find_last_of(',');
+    if (lastComma != string::npos) {
+        surname = fullName.substr(0, lastComma);
+        string rest = fullName.substr(lastComma + 1);
+        size_t firstSpace = rest.find_first_of(' ');
+        if (firstSpace != string::npos) {
+            firstName = rest.substr(0, firstSpace);
+            middleInitial = rest.substr(firstSpace + 1);
+        } else {
+            firstName = rest;
+            middleInitial = "";
+        }
+    } else {
+        surname = fullName;
+        firstName = "";
+        middleInitial = "";
+    }
+}
+
+// Function to format date of birth into "MM/DD/YY"
+string formatDateOfBirth(const string& dob) {
+    string formattedDate;
+
+    // Assuming dob is in "MM/DD/YYYY" format
+    string month = dob.substr(0, 2);
+    string day = dob.substr(3, 2);
+    string year = dob.substr(8, 2); // Assuming year is two-digit
+
+    formattedDate = month + "/" + day + "/" + year;
+
+    return formattedDate;
+}
+
+// Function to assign catalog numbers to persons based on surname sorting
+void assignCatalogNumbers(Person* head) {
+    int catalogNumber = 1;
+    Person* current = head;
+    while (current != nullptr) {
+        current->catalogNumber = catalogNumber++;
         current = current->next;
     }
 }
@@ -54,7 +111,7 @@ void displayList(const Person* head) {
 int main()
 {
     string command;
-    Person* head = nullptr; 
+    Person* head = nullptr; // Linked list head pointer
 
     while (true)
     {
@@ -64,6 +121,7 @@ int main()
 
         if (command == "exit")
         {
+            // Clean up allocated memory for linked list before exiting
             Person* current = head;
             while (current != nullptr) {
                 Person* next = current->next;
@@ -74,17 +132,21 @@ int main()
         }
         else if (command == "register")
         {
-            Person* newPerson = new Person("", "", "", "", "", "", "", 0);
+            Person* newPerson = new Person("", "", "", "", "", "", "", "", "", "", "", "", "", 0, 0);
 
             cout << "\nRegistration Form:" << endl;
-            cout << "Name: ";
-            getline(cin, newPerson->name);
+            cout << "Name (Surname, First Name, Middle Initial): ";
+            string fullName;
+            getline(cin, fullName);
+            formatName(fullName, newPerson->surname, newPerson->firstName, newPerson->middleInitial);
 
             cout << "Password: ";
             getline(cin, newPerson->password);
 
-            cout << "Date of Birth: ";
-            getline(cin, newPerson->dateOfBirth);
+            cout << "Date of Birth (MM/DD/YYYY): ";
+            string dob;
+            getline(cin, dob);
+            newPerson->dateOfBirth = formatDateOfBirth(dob);
 
             cout << "Address: ";
             getline(cin, newPerson->address);
@@ -92,11 +154,15 @@ int main()
             cout << "Civil Status (Single/Married/Divorced/Widowed): ";
             getline(cin, newPerson->civilStatus);
 
-            cout << "Name of Father: ";
-            getline(cin, newPerson->fatherName);
+            cout << "Father's Name (Surname, First Name, Middle Initial): ";
+            string fatherFullName;
+            getline(cin, fatherFullName);
+            formatName(fatherFullName, newPerson->fatherSurname, newPerson->fatherFirstName, newPerson->fatherMiddleInitial);
 
-            cout << "Name of Mother (Maiden Name): ";
-            getline(cin, newPerson->motherMaidenName);
+            cout << "Mother's Maiden Name (Surname, First Name, Middle Initial): ";
+            string motherFullName;
+            getline(cin, motherFullName);
+            formatName(motherFullName, newPerson->motherSurname, newPerson->motherFirstName, newPerson->motherMiddleInitial);
 
             cout << "Monthly Income Range:" << endl;
             cout << "1. Below PHP 10,000" << endl;
@@ -105,7 +171,7 @@ int main()
             cout << "Select an option (1/2/3): ";
             int incomeOption;
             cin >> incomeOption;
-            cin.ignore();
+            cin.ignore(); // Ignore newline left in buffer after cin
 
             switch (incomeOption) {
                 case 1:
@@ -122,8 +188,11 @@ int main()
                     break;
             }
 
-            // Insert new person into the linked list in sorted order by name (surname)
+            // Insert new person into the linked list in sorted order by surname
             insertSorted(head, newPerson);
+
+            // Assign catalog numbers based on surname sorting
+            assignCatalogNumbers(head);
 
             cout << "\nRegistration successful." << endl;
         }
