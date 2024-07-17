@@ -1,6 +1,6 @@
 #include<iostream>
 #include<fstream>
-#include<algorithm> // For std::transform and std::tolower
+#include<algorithm> 
 using namespace std;
 
 struct Person {
@@ -11,8 +11,8 @@ struct Person {
     string civilStatus;
     string fatherName;
     string motherMaidenName;
-    int income; // in PHP (Philippine Peso)
-    Person* next; // Pointer to next person in the linked list
+    int income; 
+    Person* next;
 
     Person(const string& n, const string& pw, const string& dob, const string& addr,
            const string& cs, const string& fn, const string& mmn, int inc)
@@ -35,7 +35,6 @@ void insertSorted(Person*& head, Person* newPerson) {
     }
 }
 
-// Function to display all persons in the linked list
 void displayList(const Person* head) {
     const Person* current = head;
     while (current != nullptr) {
@@ -55,7 +54,7 @@ void displayList(const Person* head) {
 int main()
 {
     string command;
-    Person* head = nullptr; // Linked list head pointer
+    Person* head = nullptr; 
 
     while (true)
     {
@@ -65,7 +64,6 @@ int main()
 
         if (command == "exit")
         {
-            // Clean up allocated memory for linked list before exiting
             Person* current = head;
             while (current != nullptr) {
                 Person* next = current->next;
@@ -107,7 +105,7 @@ int main()
             cout << "Select an option (1/2/3): ";
             int incomeOption;
             cin >> incomeOption;
-            cin.ignore(); // Ignore newline left in buffer after cin
+            cin.ignore();
 
             switch (incomeOption) {
                 case 1:
