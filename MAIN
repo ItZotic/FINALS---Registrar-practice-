@@ -1,5 +1,6 @@
 #include<iostream>
 #include<fstream>
+#include<algorithm> // For std::transform and std::tolower
 using namespace std;
 
 struct Person {
@@ -11,54 +12,93 @@ struct Person {
     string fatherName;
     string motherMaidenName;
     int income; // in PHP (Philippine Peso)
+    Person* next; // Pointer to next person in the linked list
+
+    Person(const string& n, const string& pw, const string& dob, const string& addr,
+           const string& cs, const string& fn, const string& mmn, int inc)
+        : name(n), password(pw), dateOfBirth(dob), address(addr), civilStatus(cs),
+          fatherName(fn), motherMaidenName(mmn), income(inc), next(nullptr) {}
 };
+
+// Function to insert a person into the linked list sorted by name (surname)
+void insertSorted(Person*& head, Person* newPerson) {
+    if (head == nullptr || newPerson->name < head->name) {
+        newPerson->next = head;
+        head = newPerson;
+    } else {
+        Person* current = head;
+        while (current->next != nullptr && current->next->name < newPerson->name) {
+            current = current->next;
+        }
+        newPerson->next = current->next;
+        current->next = newPerson;
+    }
+}
+
+// Function to display all persons in the linked list
+void displayList(const Person* head) {
+    const Person* current = head;
+    while (current != nullptr) {
+        cout << "Name: " << current->name << endl;
+        cout << "Password: " << current->password << endl;
+        cout << "Date of Birth: " << current->dateOfBirth << endl;
+        cout << "Address: " << current->address << endl;
+        cout << "Civil Status: " << current->civilStatus << endl;
+        cout << "Father's Name: " << current->fatherName << endl;
+        cout << "Mother's Maiden Name: " << current->motherMaidenName << endl;
+        cout << "Monthly Income: PHP " << current->income << endl;
+        cout << endl;
+        current = current->next;
+    }
+}
 
 int main()
 {
     string command;
+    Person* head = nullptr; // Linked list head pointer
+
     while (true)
     {
-        cout << "(register/exit/login)" << endl
+        cout << "(register/exit/login/display)" << endl
              << "Command: ";
         getline(cin, command);
 
         if (command == "exit")
         {
+            // Clean up allocated memory for linked list before exiting
+            Person* current = head;
+            while (current != nullptr) {
+                Person* next = current->next;
+                delete current;
+                current = next;
+            }
             return 1;
         }
         else if (command == "register")
         {
-            ofstream outFile("registration.txt", ios::app); // Append mode to add new registrations
-
-            if (!outFile.is_open())
-            {
-                cout << "Could not open file." << endl;
-                return 0;
-            }
-
-            Person newPerson;
+            Person* newPerson = new Person("", "", "", "", "", "", "", 0);
 
             cout << "\nRegistration Form:" << endl;
             cout << "Name: ";
-            getline(cin, newPerson.name);
+            getline(cin, newPerson->name);
 
             cout << "Password: ";
-            getline(cin, newPerson.password);
+            getline(cin, newPerson->password);
 
             cout << "Date of Birth: ";
-            getline(cin, newPerson.dateOfBirth);
+            getline(cin, newPerson->dateOfBirth);
 
             cout << "Address: ";
-            getline(cin, newPerson.address);
+            getline(cin, newPerson->address);
 
             cout << "Civil Status (Single/Married/Divorced/Widowed): ";
-            getline(cin, newPerson.civilStatus);
+            getline(cin, newPerson->civilStatus);
 
             cout << "Name of Father: ";
-            getline(cin, newPerson.fatherName);
+            getline(cin, newPerson->fatherName);
 
             cout << "Name of Mother (Maiden Name): ";
-            getline(cin, newPerson.motherMaidenName);
+            getline(cin, newPerson->motherMaidenName);
 
             cout << "Monthly Income Range:" << endl;
             cout << "1. Below PHP 10,000" << endl;
@@ -71,88 +111,37 @@ int main()
 
             switch (incomeOption) {
                 case 1:
-                    newPerson.income = 10000; // Below PHP 10,000
+                    newPerson->income = 10000; // Below PHP 10,000
                     break;
                 case 2:
-                    newPerson.income = 15000; // PHP 10,000 - PHP 20,000 (average)
+                    newPerson->income = 15000; // PHP 10,000 - PHP 20,000 (average)
                     break;
                 case 3:
-                    newPerson.income = 25000; // Above PHP 20,000
+                    newPerson->income = 25000; // Above PHP 20,000
                     break;
                 default:
-                    newPerson.income = 0; // Default to 0 if invalid option
+                    newPerson->income = 0; // Default to 0 if invalid option
                     break;
             }
 
-            outFile << newPerson.name << ","
-                    << newPerson.password << ","
-                    << newPerson.dateOfBirth << ","
-                    << newPerson.address << ","
-                    << newPerson.civilStatus << ","
-                    << newPerson.fatherName << ","
-                    << newPerson.motherMaidenName << ","
-                    << newPerson.income << endl;
-
-            outFile.close();
+            // Insert new person into the linked list in sorted order by name (surname)
+            insertSorted(head, newPerson);
 
             cout << "\nRegistration successful." << endl;
         }
         else if (command == "login")
         {
-            ifstream inFile("registration.txt");
-
-            if (!inFile.is_open())
-            {
-                cout << "File not found or could not be opened." << endl;
-                return 0;
-            }
-
-            string name, password, dateOfBirth, address, civilStatus, fatherName, motherMaidenName;
-            int income;
-
-            cout << "\nLogin:" << endl;
-            cout << "Enter Username: ";
-            getline(cin, name);
-
-            cout << "Enter Password: ";
-            getline(cin, password);
-
-            bool found = false;
-
-            while (getline(inFile, name, ','))
-            {
-                getline(inFile, password, ',');
-                getline(inFile, dateOfBirth, ',');
-                getline(inFile, address, ',');
-                getline(inFile, civilStatus, ',');
-                getline(inFile, fatherName, ',');
-                getline(inFile, motherMaidenName, ',');
-                inFile >> income;
-                inFile.ignore(); // Ignore newline left in buffer after reading income
-
-                if (name == name && password == password)
-                {
-                    found = true;
-                    break;
-                }
-            }
-
-            inFile.close();
-
-            if (found)
-            {
-                cout << "Login successful." << endl;
-                cout << "Welcome, " << name << endl;
-                cout << "Date of Birth: " << dateOfBirth << endl;
-                cout << "Address: " << address << endl;
-                cout << "Civil Status: " << civilStatus << endl;
-                cout << "Father's Name: " << fatherName << endl;
-                cout << "Mother's Maiden Name: " << motherMaidenName << endl;
-                cout << "Monthly Income: PHP " << income << endl;
-            }
-            else
-            {
-                cout << "Incorrect username or password." << endl;
+            // Login functionality not implemented in this example
+            cout << "Login functionality not implemented." << endl;
+        }
+        else if (command == "display")
+        {
+            // Display all persons in the linked list
+            if (head == nullptr) {
+                cout << "No data to display." << endl;
+            } else {
+                cout << "\nList of Registered Persons:" << endl;
+                displayList(head);
             }
         }
         else
